@@ -1,9 +1,15 @@
 import numpy as np
 import uproot
+import col_load
+import time
 
 ### Constants
-gr = 1.618
-
+mass_p = 0.93827
+min_p_energy = mass_p + 0.04
+min_e_energy = 0.020
+mc_samples = ["NUE", "MC", "DRT"]
+root_dir = 'nuselection'
+main_tree = "NeutrinoSelectionFilter"
 
 ### Fiducial volume
 lower = np.array([-1.55, -115.53, 0.1])
@@ -26,22 +32,66 @@ def is_contain(x,y,z):
 
 ### Load sample info
 def load_sample_info(input_dir, file_name):
+    start = time.time()
+    print('Passing rate after Slice ID:')
     text_file = open(input_dir+file_name, "r")
     sample_info = {}
     for line in text_file.readlines():
         l = line.split()
         if l[0] == "data":
+            l[0]="On"
             sample_info["On"] = {}
             sample_info["On"][l[1]] = float(l[3]) * 1e19
-            sample_info["On"][l[5][:-1]] = uproot.open(input_dir + l[6])['nuselection']
-            sample_info["On"]['numentries'] = sample_info["On"]['file']['NeutrinoSelectionFilter'].numentries
+            file = uproot.open(input_dir + l[6])[root_dir]
+            sample_info["On"]['numentries'] = file[main_tree].numentries
         else:
             sample_info[l[0]] = {}
             sample_info[l[0]][l[3]] = float(l[5])
-            sample_info[l[0]][l[6][:-1]] = uproot.open(input_dir + l[7])['nuselection']
-            sample_info[l[0]]['numentries'] = sample_info[l[0]]['file']['NeutrinoSelectionFilter'].numentries
-    return sample_info
+            file = uproot.open(input_dir + l[7])[root_dir]
+            sample_info[l[0]]['numentries'] = file[main_tree].numentries
+            if l[0] == "NUE":
+                fields = [f.decode() for f in file[main_tree].keys()]
+            if l[0] in mc_samples:
+                sample_info[l[0]]['POT'] = file["SubRun"].array("pot").sum()
+                
+        cols_load = col_load.cols_reco
+        if l[0] in mc_samples:
+            cols_load+= (col_load.col_mc+col_load.col_backtracked)
+        sample_info[l[0]]['daughters'] = file[main_tree].pandas.df(cols_load, flatten=True)
+        sample_info[l[0]]['daughters'].index.names = ['event', 'daughter']
+    
+        pass_rate = sum(file[main_tree].array("n_pfps") > 0) / sample_info[l[0]]["numentries"]
+        print(l[0], "\t{:.2f}%".format(pass_rate * 100))
+        
+        if l[0] in ["MC", "NUE"]:
+            sample_info[l[0]]['mc'], sample_info[l[0]]['daughters']['nueccinc'], signal_mask = load_truth_event(file[main_tree], l[0])
+        
+    end = time.time()
+    print("Completed, time passed: {:0.1f}s.".format(end - start))
+    return sample_info, fields, signal_mask
 
+def load_truth_event(tree, name):
+    mc_arrays = tree.arrays(col_load.table_cols, namedecode="utf-8")
+    mc_arrays["leeweight"] *= mc_arrays["weightSpline"]
+
+    has_proton = (
+        mc_arrays["mc_E"][mc_arrays["mc_pdg"] == 2212] > min_p_energy
+    ).any()
+    has_electron = (
+        mc_arrays["mc_E"][mc_arrays["mc_pdg"] == 11] > min_e_energy
+    ).any()
+    has_fiducial_vtx = is_fid(
+        mc_arrays["true_nu_vtx_x"],
+        mc_arrays["true_nu_vtx_y"],
+        mc_arrays["true_nu_vtx_z"],
+    )
+
+    signal_mask = has_fiducial_vtx & has_electron
+    signal_mask_daughters = np.repeat(signal_mask, mc_arrays["n_pfps"])
+    pass_rate = sum((signal_mask * mc_arrays["n_pfps"]) > 0) / sum(signal_mask)
+    print(name, "sample: nueccinc passing Slice ID \t{:.2f}%".format(pass_rate * 100))
+    return mc_arrays, signal_mask_daughters, signal_mask
+    
 ### Get the pitch
 def get_pitch(dir_y, dir_z, plane):
     if plane == 0:
