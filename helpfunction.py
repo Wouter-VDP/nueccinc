@@ -41,3 +41,13 @@ def load_sample_info(input_dir, file_name):
             sample_info[l[0]][l[6][:-1]] = uproot.open(input_dir + l[7])['nuselection']
             sample_info[l[0]]['numentries'] = sample_info[l[0]]['file']['NeutrinoSelectionFilter'].numentries
     return sample_info
+
+### Get the pitch
+def get_pitch(dir_y, dir_z, plane):
+    if plane == 0:
+        cos = dir_y * (-np.sqrt(3)/2) + dir_z * (1/2)
+    if plane == 1:
+        cos = dir_y * (np.sqrt(3)/2) + dir_z * (1/2)
+    if plane == 2:
+        cos = dir_z
+    return 0.3 / cos
