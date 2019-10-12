@@ -65,6 +65,7 @@ def load_sample_info(input_dir, file_name):
         
         if l[0] in ["MC", "NUE"]:
             sample_info[l[0]]['mc'], sample_info[l[0]]['daughters']['nueccinc'], signal_mask = load_truth_event(file[main_tree], l[0])
+            sample_info[l[0]]['signal_mask'] = signal_mask
         
     end = time.time()
     print("Completed, time passed: {:0.1f}s.".format(end - start))
