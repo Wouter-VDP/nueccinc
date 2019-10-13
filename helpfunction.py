@@ -1,5 +1,6 @@
 import numpy as np
 import uproot
+import awkward
 import col_load
 import time
 
@@ -58,6 +59,7 @@ def load_sample_info(input_dir, file_name):
         if l[0] in mc_samples:
             cols_load+= (col_load.col_mc+col_load.col_backtracked)
         sample_info[l[0]]['daughters'] = file[main_tree].pandas.df(cols_load, flatten=True)
+        sample_info[l[0]]['daughters']['trk_min_cos'] = calc_max_angle(file[main_tree])
         sample_info[l[0]]['daughters'].index.names = ['event', 'daughter']
     
         pass_rate = sum(file[main_tree].array("n_pfps") > 0) / sample_info[l[0]]["numentries"]
@@ -92,6 +94,16 @@ def load_truth_event(tree, name):
     pass_rate = sum((signal_mask * mc_arrays["n_pfps"]) > 0) / sum(signal_mask)
     print(name, "sample: nueccinc passing Slice ID \t{:.2f}%".format(pass_rate * 100))
     return mc_arrays, signal_mask_daughters, signal_mask
+
+def calc_max_angle(tree):
+    dir_x = tree.array("trk_dir_x_v")
+    dir_y = tree.array("trk_dir_y_v")
+    dir_z = tree.array("trk_dir_z_v")
+    x1, x2 = dir_x.pairs(nested=True).unzip()
+    y1, y2 = dir_y.pairs(nested=True).unzip()
+    z1, z2 = dir_z.pairs(nested=True).unzip()
+    cos_min = ((x1 * x2 + y1 * y2 + z1 * z2) / (np.sqrt(x1 ** 2 + y1 ** 2 + z1 ** 2) * np.sqrt(x2 ** 2 + y2 ** 2 + z2 ** 2))).min()
+    return awkward.topandas(cos_min, flatten=True).clip(upper=1)
     
 ### Get the pitch
 def get_pitch(dir_y, dir_z, plane):
