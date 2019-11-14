@@ -37,10 +37,12 @@ col_shr = [
     "shr_tkfit_dedx_nhits_u_v",
     "shr_tkfit_dedx_nhits_v_v",
     "shr_tkfit_dedx_nhits_y_v",
-    #"shr_nclus0_v", -> Not filled for every pfp, need to be changed!
-    #"shr_nclus0_v",
-    #"shr_nclus0_v",
-    #"shr_clushitfrac2_v"
+    "shr_nclus0_v", 
+    "shr_nclus0_v",
+    "shr_nclus0_v",
+    "shr_clushitfrac2_v"
+    'shr_moliere_avg_v'
+    'shr_moliere_rms_v'
 ]
 col_backtracked = [
     "backtracked_pdg",
@@ -91,8 +93,8 @@ col_event = [
     "nslice",
     "CosmicIP",
     "n_tracks_contained",
-    "n_tracks_contained"
-    # contained_sps_ratio -> currently not availible
+    "n_tracks_contained",
+    "contained_sps_ratio"
 ]
 
 cols_run3 = ["_closestNuCosmicDist"]
