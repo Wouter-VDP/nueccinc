@@ -1,0 +1,3 @@
+tor875_wcut 5.86e+18
+E1DCNT_wcut 1385167
+EXT 113551718

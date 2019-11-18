@@ -91,19 +91,19 @@ def efficiency_post(num, den, num_w=None, den_w=None, n_bins=10, x_min=0, x_max=
 # get the purity of a selection, very data format specific!
 def get_purity(data, selector, cats):
     ## Calculate the purity:
-    purity_denom = sum(data["MC"]["daughters"].eval(selector)) * data["MC"]["scaling"]
+    purity_denom = sum(data["nu"]["daughters"].eval(selector)) * data["nu"]["scaling"]
     purity_denom += (
-        sum(data["DRT"]["daughters"].eval(selector + "*weightSpline"))
-        * data["DRT"]["scaling"]
+        sum(data["dirt"]["daughters"].eval(selector + "*weightSpline"))
+        * data["dirt"]["scaling"]
     )
     purity_denom += (
-        sum(data["Off"]["daughters"].eval(selector)) * data["Off"]["scaling"]
+        sum(data["off"]["daughters"].eval(selector)) * data["off"]["scaling"]
     )
     purity_nom = 0
     for cat in cats:
         purity_nom += sum(
-            data["NUE"]["daughters"].query("category==@cat").eval(selector + "*weightSpline")
-        )* data["NUE"]["scaling"]
+            data["nu"]["daughters"].query("category==@cat").eval(selector + "*weightSpline")
+        )* data["nu"]["scaling"]
     return purity_nom / purity_denom
 
 
@@ -139,7 +139,7 @@ def plot_panel_data_mc(
     # MC contribution
     for cat in kind_labs.keys():
         cat_data = (
-            data["MC"]["daughters"]
+            data["nu"]["daughters"]
             .query(query)
             .query("abs({})==@cat".format(column_check))
             .eval(field)
@@ -147,10 +147,10 @@ def plot_panel_data_mc(
         if len(cat_data) > 0 and cat != 6:
             plot_data.append(cat_data)
             weights.append(
-                data["MC"]["daughters"]
+                data["nu"]["daughters"]
                 .query(query)
                 .query("abs({})==@cat".format(column_check))["weightSpline"]
-                * data["MC"]["scaling"]
+                * data["nu"]["scaling"]
             )
             labels.append(kind_labs[cat] + ": {0:#.1f}".format(sum(weights[-1])))
             colors.append(kind_colors[cat])
@@ -162,28 +162,28 @@ def plot_panel_data_mc(
             )
 
     # LEE contribution
-    plot_data.append(data["NUE"]["daughters"].query(query).eval(field))
+    plot_data.append(data["nue"]["daughters"].query(query).eval(field))
     weights.append(
-        data["NUE"]["daughters"].query(query)["leeweight"] * data["NUE"]["scaling"]
+        data["nue"]["daughters"].query(query)["leeweight"] * data["nue"]["scaling"]
     )
     labels.append(r"$\nu_e$ LEE" + ": {0:#.2g}".format(sum(weights[-1])))
 
     # DRT contribution
-    plot_data.append(data["DRT"]["daughters"].query(query).eval(field))
+    plot_data.append(data["dirt"]["daughters"].query(query).eval(field))
     weights.append(
-        data["DRT"]["daughters"].query(query)["weightSpline"] * data["DRT"]["scaling"]
+        data["dirt"]["daughters"].query(query)["weightSpline"] * data["dirt"]["scaling"]
     )
     labels.append("Out of Cryo" + ": {0:#.1f}".format(sum(weights[-1])))
     # Off Contribution
-    plot_data.append(data["Off"]["daughters"].query(query).eval(field))
-    weights.append(len(plot_data[-1]) * [data["Off"]["scaling"]])
+    plot_data.append(data["off"]["daughters"].query(query).eval(field))
+    weights.append(len(plot_data[-1]) * [data["off"]["scaling"]])
     labels.append("BNB Off" + ": {0:#.1f}".format(sum(weights[-1])))
     # On Contribution
-    plot_data.append(data["On"]["daughters"].query(query).eval(field))
+    plot_data.append(data["on"]["daughters"].query(query).eval(field))
     weights.append([1.0] * len(plot_data[-1]))
     labels.append("BNB On" + ": {0:0.0f}".format(sum(weights[-1])))
 
-    mc_weights =  data["MC"]["daughters"].query(query)["weightSpline"]*data["MC"]["scaling"]
+    mc_weights =  data["nu"]["daughters"].query(query)["weightSpline"]*data["nu"]["scaling"]
     ratio = sum(weights[-1]) / (sum(weights[-2])+sum(weights[-3])+sum(mc_weights))
     
     flattened_MC = np.concatenate(plot_data[:-1]).ravel()
@@ -198,9 +198,9 @@ def plot_panel_data_mc(
     err_off = hist_bin_uncertainty(list(plot_data[-2]), list(weights[-2]), edges)
     err_drt = hist_bin_uncertainty(list(plot_data[-3]), list(weights[-3]), edges)
     err_mc = hist_bin_uncertainty(
-        list(data["MC"]["daughters"].query(query).eval(field)),
+        list(data["nu"]["daughters"].query(query).eval(field)),
         list(
-            data["MC"]["daughters"].query(query)["weightSpline"] * data["MC"]["scaling"]
+            data["nu"]["daughters"].query(query)["weightSpline"] * data["nu"]["scaling"]
         ),
         edges,
     )

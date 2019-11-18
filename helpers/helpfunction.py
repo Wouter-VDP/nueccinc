@@ -57,13 +57,18 @@ def load_sample_info(input_dir, run, exclude_samples):
     for k,v in sample_dict.items():
         file = uproot.open(v)[root_dir]    
         cols_load = col_load.cols_reco.copy()
+        fields = [f.decode() for f in file[main_tree].keys()]
         if k not in data_samples:
             sample_info[k] = {}
             cols_load+= (col_load.col_mc+col_load.col_backtracked)
             sample_info[k]['pot'] = file["SubRun"].array("pot").sum()
-            sample_info[k]['scaling'] = sample_info['on']['pot']/sample_info[k]['pot']
-        if run==3:
-            cols_load+= cols_run3
+            if 'on' in sample_info:
+                sample_info[k]['scaling'] = sample_info['on']['pot']/sample_info[k]['pot']
+            else:
+                sample_info[k]['scaling'] = 0
+                
+        cols_run3_add = [col for col in col_load.cols_run3 if col in fields]
+        cols_load+= cols_run3_add
             
         sample_info[k]['daughters'] = file[main_tree].pandas.df(cols_load, flatten=True)
         sample_info[k]['daughters']['trk_min_cos'] = calc_max_angle(file[main_tree])
@@ -82,11 +87,11 @@ def load_sample_info(input_dir, run, exclude_samples):
             sample_info[k]['daughters']['nueccinc'] = signal_mask_daughters
             sample_info[k]['daughters']['truth_cat'] = truth_categories_daughters
             if k == "nue":
-                fields = [f.decode() for f in file[main_tree].keys()]
+                fieldsnue = [f.decode() for f in file[main_tree].keys()]
                    
     end = time.time()
     print("Completed, time passed: {:0.1f}s.".format(end - start))
-    return sample_info, fields
+    return sample_info, fieldsnue
    
 
 def load_sample_info_old(input_dir, file_name):
@@ -162,7 +167,7 @@ def load_truth_event(tree, name):
     numucc = has_fiducial_vtx & has_muon
     nu_out_of_fv = ~has_fiducial_vtx
     truth_categories = nuecc0p0pi + 2*nueccNp0pi + 3*nueccNpMpi + 4*nunc + 5*numucc + 6*nu_out_of_fv
-    mc_arrays["true_category"] = signal_mask 
+    mc_arrays["true_category"] = truth_categories 
     truth_categories_daughters = np.repeat(truth_categories, mc_arrays["n_pfps"])
     
     return mc_arrays, signal_mask_daughters, truth_categories_daughters

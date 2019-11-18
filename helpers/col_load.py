@@ -1,5 +1,12 @@
 # Columns for daughter frames:
-col_pfp = ["pfnplanehits_U", "pfnplanehits_V", "pfnplanehits_Y", "pfnhits"]
+col_pfp = ["pfnplanehits_U", 
+           "pfnplanehits_V", 
+           "pfnplanehits_Y", 
+           "pfnhits",
+           "pfp_generation_v",
+           "pfp_trk_daughters_v",
+           "pfp_shr_daughters_v",
+          ]
 col_trk = [
     "trk_score_v",
     "trk_distance_v",
@@ -17,6 +24,8 @@ col_trk = [
     "trk_llr_pid_y_v",
     "trk_llr_pid_v",
     "trk_llr_pid_score_v",
+    "trk_mcs_muon_mom_v",
+    "trk_calo_energy_y_v"
 ]
 col_shr = [
     "shr_dist_v",
@@ -30,19 +39,16 @@ col_shr = [
     "shr_tkfit_dedx_u_v",
     "shr_tkfit_dedx_v_v",
     "shr_tkfit_dedx_y_v",
-    "shr_tkfit_gap10_dedx_u_v",
-    "shr_tkfit_gap10_dedx_v_v",
+    #"shr_tkfit_gap10_dedx_u_v",
+    #"shr_tkfit_gap10_dedx_v_v",
     "shr_tkfit_gap10_dedx_y_v",
     "shr_tkfit_nhits_v",
     "shr_tkfit_dedx_nhits_u_v",
     "shr_tkfit_dedx_nhits_v_v",
     "shr_tkfit_dedx_nhits_y_v",
-    "shr_nclus0_v", 
-    "shr_nclus0_v",
-    "shr_nclus0_v",
-    "shr_clushitfrac2_v"
-    'shr_moliere_avg_v'
-    'shr_moliere_rms_v'
+    #"shr_clushitfrac2_v",
+    'shr_moliere_avg_v',
+    #'shr_moliere_rms_v'
 ]
 col_backtracked = [
     "backtracked_pdg",
@@ -60,6 +66,11 @@ col_mc = [
     "true_nu_vtx_sce_z",
     "nu_e",
     "nu_pdg",
+    'nelec',
+    'npion',
+    'npi0',
+    'nproton',
+    'nmuon',
     "theta",
     "ccnc",
     "interaction",
@@ -93,8 +104,9 @@ col_event = [
     "nslice",
     "CosmicIP",
     "n_tracks_contained",
-    "n_tracks_contained",
-    "contained_sps_ratio"
+    "contained_sps_ratio",
+    "contained_fraction",
+    "slpdg"
 ]
 
 cols_run3 = ["_closestNuCosmicDist"]
@@ -122,5 +134,7 @@ table_cols = [
     'npion',
     'npi0',
     'nproton',
-    'nmuon'
+    'nmuon',
+    "nu_completeness_from_pfp",
+    "nu_purity_from_pfp"
 ]
