@@ -2,10 +2,17 @@
 col_pfp = ["pfnplanehits_U", 
            "pfnplanehits_V", 
            "pfnplanehits_Y", 
+           "pfpplanesubclusters_U",
+           "pfpplanesubclusters_V",
+           "pfpplanesubclusters_Y",
+           "pfpplanesubhitfracmax_U",
+           "pfpplanesubhitfracmax_V",
+           "pfpplanesubhitfracmax_Y",
            "pfnhits",
            "pfp_generation_v",
            "pfp_trk_daughters_v",
            "pfp_shr_daughters_v",
+           
           ]
 col_trk = [
     "trk_score_v",
@@ -25,10 +32,16 @@ col_trk = [
     "trk_llr_pid_v",
     "trk_llr_pid_score_v",
     "trk_mcs_muon_mom_v",
-    "trk_calo_energy_y_v"
+    "trk_calo_energy_y_v",
+    "trk_sce_end_x_v",
+    "trk_sce_end_y_v",
+    "trk_sce_end_z_v",
+    "trk_sce_start_x_v",
+    "trk_sce_start_x_v",
+    "trk_sce_start_x_v",
 ]
 col_shr = [
-    "shr_dist_v",
+    #"shr_dist_v",
     "shr_energy_y_v",
     "shr_openangle_v",
     "shr_tkfit_start_x_v",
@@ -39,16 +52,15 @@ col_shr = [
     "shr_tkfit_dedx_u_v",
     "shr_tkfit_dedx_v_v",
     "shr_tkfit_dedx_y_v",
-    #"shr_tkfit_gap10_dedx_u_v",
-    #"shr_tkfit_gap10_dedx_v_v",
+    "shr_tkfit_gap10_dedx_u_v",
+    "shr_tkfit_gap10_dedx_v_v",
     "shr_tkfit_gap10_dedx_y_v",
     "shr_tkfit_nhits_v",
     "shr_tkfit_dedx_nhits_u_v",
     "shr_tkfit_dedx_nhits_v_v",
     "shr_tkfit_dedx_nhits_y_v",
-    #"shr_clushitfrac2_v",
     'shr_moliere_avg_v',
-    #'shr_moliere_rms_v'
+    'shr_moliere_rms_v'
 ]
 col_backtracked = [
     "backtracked_pdg",
@@ -76,7 +88,6 @@ col_mc = [
     "interaction",
     "weightSpline",
     "leeweight",
-    
     "nu_completeness_from_pfp",
     "nu_purity_from_pfp"
 ]
@@ -106,7 +117,9 @@ col_event = [
     "n_tracks_contained",
     "contained_sps_ratio",
     "contained_fraction",
-    "slpdg"
+    "slpdg",
+    "SliceCaloEnergy2",
+    'NeutrinoEnergy2'
 ]
 
 cols_run3 = ["_closestNuCosmicDist"]
