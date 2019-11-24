@@ -37,8 +37,8 @@ col_trk = [
     "trk_sce_end_y_v",
     "trk_sce_end_z_v",
     "trk_sce_start_x_v",
-    "trk_sce_start_x_v",
-    "trk_sce_start_x_v",
+    "trk_sce_start_y_v",
+    "trk_sce_start_z_v",
 ]
 col_shr = [
     #"shr_dist_v",
