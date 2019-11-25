@@ -87,7 +87,7 @@ def load_sample_info(input_dir, run, exclude_samples):
             mc_arrays, signal_mask_daughters, truth_categories_daughters = load_truth_event(file[main_tree], k)
             sample_info[k]['mc'] = mc_arrays
             sample_info[k]['daughters']['nueccinc'] = signal_mask_daughters
-            sample_info[k]['daughters']['truth_cat'] = truth_categories_daughters
+            sample_info[k]['daughters']['true_category'] = truth_categories_daughters
                    
     end = time.time()
     print("\nCompleted, time passed: {:0.1f}s.".format(end - start))

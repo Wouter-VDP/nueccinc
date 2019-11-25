@@ -136,6 +136,11 @@ def plot_panel_data_mc(
         kind_colors = plot_dicts.pdg_colors
         column_check = "backtracked_pdg"
 
+    elif kind == "event_int":
+        kind_labs = plot_dicts.int_labels
+        kind_colors = plot_dicts.int_colors
+        column_check = "cat_int"
+
     # MC contribution
     for cat in kind_labs.keys():
         cat_data = (
@@ -176,7 +181,8 @@ def plot_panel_data_mc(
     labels.append("BNB On" + ": {0:0.0f}".format(sum(weights[-1])))
 
     mc_weights =  data["nu"]["daughters"].query(query)["weightSpline"]*data["nu"]["scaling"]
-    ratio = sum(weights[-1]) / (sum(weights[-2])+sum(weights[-3])+sum(mc_weights))
+    ratio1 = sum(weights[-1]) / (sum(weights[-2])+sum(weights[-3])+sum(mc_weights))
+    ratio2 = (sum(weights[-1])-sum(weights[-2])) / (sum(weights[-3])+sum(mc_weights))
     
     flattened_MC = np.concatenate(plot_data[:-1]).ravel()
     flattened_weights = np.concatenate(weights[:-1]).ravel()
@@ -261,7 +267,7 @@ def plot_panel_data_mc(
    
     ax[0].set_ylabel("Events per bin")
     ax[0].set_title(title_str, loc="right")
-    ax[0].set_title("Data/MC ratio: {0:#.2f}".format(ratio), loc="left")
+    ax[0].set_title("(On-Off)/MC ratio: {0:#.2f}".format(ratio2), loc="left")
     ax[0].set_ylim(0, y_max_scaler * max_val[-1])
     ax[0].set_xlim(x_min, x_max)
 
@@ -285,7 +291,7 @@ def plot_panel_data_mc(
         ax[0].legend(bbox_to_anchor=(1.02, 0.5), loc="center left")
 
     purity = get_purity(data, query, [30, 31, 32])
-    return ratio, purity, ks_test_p
+    return [ratio1,ratio2], purity, ks_test_p
 
 
 # @in N: number of bins 

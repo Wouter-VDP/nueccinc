@@ -27,40 +27,38 @@ pdg_labels = {
     0: "Cosmic"
 }
 
-int_labels = {
+int_labels_true = {
     0: "QE",
     1: "Resonant",
     2: "DIS",
-    3: "Coherent",
-    4: "Coherent Elastic",
-    5: "Electron scatt.",
-    6: "IMDAnnihilation",
-    7: r"Inverse $\beta$ decay",
-    8: "Glashow resonance",
-    9: "AMNuGamma",
     10: "MEC",
-    11: "Diffractive",
-    12: "EM",
-    13: "Weak Mix"
 }
 
+int_labels = {
+    30: "QE",
+    31: "Resonant",
+    32: "DIS",
+    310: "MEC",
+    33: r"$\nu_\mu$ NC",
+    10: r"$\nu_e$",
+    4: r"Cosmic",
+    5: r"Out of FV",
+    6: r"other",
+    0: r"No slice"
+}
 
 int_colors = {
-    0: "bisque",
-    1: "darkorange",
-    2: "goldenrod",
-    3: "lightcoral",
-    4: "forestgreen",
-    5: "turquoise",
-    6: "teal",
-    7: "deepskyblue",
-    8: "steelblue",
-    9: "royalblue",
-    10: "crimson",
-    11: "mediumorchid",
-    12: "magenta",
-    13: "pink",
-    111: "black"
+    4: "xkcd:light red",
+    5: "xkcd:brick",
+    3: "xkcd:cobalt",
+    33: "xkcd:sky blue",
+    30: "xkcd:green",
+    31: "xkcd:mint green",
+    32: "xkcd:lime green",
+    310: "darkgreen",
+    10: "xkcd:goldenrod",
+    6: "xkcd:grey",
+    0: "xkcd:black"
 }
 
 category_colors = {
