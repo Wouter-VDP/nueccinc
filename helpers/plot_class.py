@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import uproot
 import scipy.stats
 from helpers import plot_dicts_nue
 from helpers import plot_dicts_numu
@@ -7,27 +8,48 @@ from helpers import helpfunction
 import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 
+pi = 3.14
+
 
 class Plotter:
     """
     Class to make self.data/MC plots
-    Initialise using a self.data dictionary as produced by RootLoader.py
+    Initialise using a data dictionary as produced by RootLoader.py
     """
 
     # Fields shared of any class instance
     gr = 1.618
 
     # Fields for initialisation
-    def __init__(self, data, signal="nue"):
+    def __init__(self, data, signal="nue", genie_version="mcc9"):
         self.signal = signal
         if signal == "nue":
             self.dicts = plot_dicts_nue
+            self.cats = [1, 10, 11]
         elif signal == "numu":
             self.dicts = plot_dicts_numu
         else:
             print("Error, unknown signal string, choose nue or numu!")
         if not all([k in data.keys() for k in ["nu", "nue", "on", "off", "dirt"]]):
             print("Error, missing samples in the data set!")
+
+        # Use the Genie v2 model by upweighting.
+        if genie_version == "mcc8":
+            numu_spline = uproot.open("./helpers/numu_v13_v12_Ratio.root")
+            nue_spline = uproot.open("./helpers/nue_v13_v12_Ratio.root")
+            spline_x = np.append(numu_spline["Graph"].__dict__["_fX"], 100)
+            spline_y_numu = np.append(numu_spline["Graph"].__dict__["_fY"], 1)
+            spline_y_nue = np.append(nue_spline["Graph"].__dict__["_fY"], 1)
+
+            data["nue"]["daughters"]["weightSpline"] = spline_y_nue[
+                np.digitize(data["nue"]["daughters"]["nu_e"], spline_x)
+            ] ** (-1)
+            data["nu"]["daughters"]["weightSpline"] = spline_y_numu[
+                np.digitize(data["nu"]["daughters"]["nu_e"], spline_x)
+            ] ** (-1)
+            print(
+                "Using the energy/pdg dependent spline weights as in MCC8 Genie V2 tune1"
+            )
 
         # Use the nue CC inc sample for plotting
         nue_tpc = helpfunction.is_tpc(
@@ -48,24 +70,24 @@ class Plotter:
             data["nu"]["daughters"]["true_nu_vtx_y"],
             data["nu"]["daughters"]["true_nu_vtx_z"],
         )
-        nu_nuecctpc = data["nu"]["daughters"].eval("ccnc & nu_pdg==12") & nue_tpc
+        nu_nuecctpc = data["nu"]["daughters"].eval("ccnc==0 & abs(nu_pdg)==12") & nu_tpc
 
         data["nu"]["daughters"]["plot_weight"] = (
             data["nu"]["daughters"]["weightSpline"]
             * data["nu"]["scaling"]
-            * (~nu_nuecctpc)
+            * (nu_nuecctpc == 0)
         )
         data["nue"]["daughters"]["plot_weight"] = (
             data["nue"]["daughters"]["weightSpline"]
             * data["nue"]["scaling"]
-            * (~nue_nuecctpc)
+            * (nue_nuecctpc == 1)
         )
         data["dirt"]["daughters"]["category"] = 7
         data["dirt"]["daughters"]["plot_weight"] = (
             data["dirt"]["daughters"]["weightSpline"] * data["dirt"]["scaling"]
         )
-        data["off"]["daughters"]["plot_weight"] = 1
-        data["on"]["daughters"]["plot_weight"] = data["off"]["scaling"]
+        data["on"]["daughters"]["plot_weight"] = 1
+        data["off"]["daughters"]["plot_weight"] = data["off"]["scaling"]
         self.mc_daughters = pd.concat(
             [
                 data["nu"]["daughters"],
@@ -94,84 +116,6 @@ class Plotter:
             )
 
         return purity_nom / purity_denom
-
-    def hist_bin_uncertainty(data, weights, x_min, x_max, bin_edges):
-        """
-        Calculate the error on the bins in the histogram including the weights.
-
-        Arguments:
-            edges {1d tuple} -- The bin edges
-            data {1d tuple} -- array with the data of a variable
-            weigths {1d tuple} -- weights, same shape as data
-            
-        Outputs:
-            bin_uncertainties {1d tuple} -- Uncertainty on each bin
-        """
-        # Bound the data and weights to be within the bin edges
-        mask_in_range = (data > x_min) & (data < x_max)
-        in_range_data = data[mask_in_range]
-        in_range_weights = weights[mask_in_range]
-
-        # Bin the weights with the same binning as the data
-        bin_index = np.digitize(in_range_data, bin_edges)
-        # N.B.: range(1, bin_edges.size) is used instead of set(bin_index) as if
-        # there is a gap in the self.data such that a bin is skipped no index would appear
-        # for it in the set
-        binned_weights = np.asarray(
-            [
-                in_range_weights[np.where(bin_index == idx)[0]]
-                for idx in range(1, len(bin_edges))
-            ]
-        )
-        bin_uncertainties = np.asarray(
-            [np.sqrt(np.sum(np.square(w))) for w in binned_weights]
-        )
-        return bin_uncertainties
-
-    def histHelper(n_bins, x_min, x_max, data, weights=0, where="mid", log=False):
-        """
-        Wrapper around the numpy histogram function.
-
-        Arguments:
-            n_bins {int} -- the number of bins
-            x_min {float} -- the minimum number along x
-            x_max {float} -- the maximum number along x
-            data {2d tuple} -- array or list of arrays
-            weigths {2d tuple} -- same shape as data or 0 if all weights are equal
-            where {string} -- if where='post': duplicate the last bin
-            log {bool} -- log==True: return x-axis log
-
-        Outputs:
-            edges {1d tuple} -- The bin edges
-            edges_mid {1d tuple} -- The middle of the bins
-            bins {2d tuple} -- The bin values, same depth as data
-            max_val {1d tuple}-- the maximum value, same depth as data
-            bin_uncertainties {2d tuple} -- Uncertainty on each bin
-        """
-        if log:
-            edges = np.logspace(np.log10(x_min), np.log10(x_max), N + 1)
-        else:
-            edges = np.linspace(x_min, x_max, N + 1)
-        edges_mid = [edges[i] + (edges[i + 1] - edges[i]) / 2 for i in range(N)]
-        if weights == 0:
-            weights = [[1] * len(d) for d in data]
-
-        bins = [
-            np.histogram(data_i, bins=edges, weights=weights_i)[0]
-            for data_i, weights_i in zip(data, weights)
-        ]
-        max_val = [max(x) for x in bins]
-        if where == "post":
-            bins = [np.append(b, b[-1]) for b in bins]
-
-        if weights != 0:
-            bin_uncertainties = [
-                hist_bin_uncertainty(d, w, x_min, x_max, bin_edges)
-                for w, d in zip(data, weights)
-            ]
-        else:
-            bin_uncertainties = [np.sqrt(b) for b in bins]
-        return edges, edges_mid, bins, max_val, bin_uncertainties
 
     def plot_panel_data_mc(
         self,
@@ -205,10 +149,10 @@ class Plotter:
             kind {string} -- cat / pdg / int 
 
         Outputs:
-            ratio -- [(on-off)/MC, on/(MC+off)]
+            ratio -- [(on-off)/MC, on/(MC+off), (on-off)/MC Error]
             purity -- purity of the inclusive channel depending on the signal
             ks_test_p -- p-value of the KS-test
-            chi2_test -- [chi2, ndof] [To Do!]
+            dict -- Output of the plot {labels: string, bins: 1d array}
         """
 
         plot_data = []
@@ -230,88 +174,62 @@ class Plotter:
             kind_labs = plot_dicts.int_labels
             kind_colors = plot_dicts.int_colors
             column_check = "cat_int"
+        else:
+            print("Unknown plotting type, please choose from int/pdg/cat")
 
         # MC contribution
+        temp_view = self.mc_daughters.query(query)
+        mc_data = temp_view.eval(field)
+        mc_weights = temp_view["plot_weight"]
+
         for cat in kind_labs.keys():
-            cat_data = (
-                self.data["nu"]["daughters"][self.nu_skipnuecctpc]
-                .query(query)
-                .query("abs({})==@cat".format(column_check))
-                .eval(field)
-            )
-            if len(cat_self.data) > 0 and cat != 6:
-                plot_self.data.append(cat_self.data)
-                weights.append(
-                    self.data["nu"]["daughters"]
-                    .query(query)
-                    .query("abs({})==@cat".format(column_check))["weightSpline"]
-                    * self.data["nu"]["scaling"]
-                )
+            temp_view_cat = temp_view.query("abs({})==@cat".format(column_check))
+            if len(temp_view_cat.index) > 0 and cat != 6:
+                plot_data.append(temp_view_cat.eval(field))
+                weights.append(temp_view_cat["plot_weight"])
                 labels.append(kind_labs[cat] + ": {0:#.1f}".format(sum(weights[-1])))
                 colors.append(kind_colors[cat])
-                print("MC category:", labels[-1], "\t#entries", len(plot_self.data[-1]))
+                print("MC category:", labels[-1], "\t#entries", len(plot_data[-1]))
 
-        # LEE contribution
-        plot_self.data.append(self.data["nue"]["daughters"].query(query).eval(field))
-        weights.append(
-            self.data["nue"]["daughters"].query(query)["leeweight"]
-            * self.data["nue"]["scaling"]
-        )
-        labels.append(r"$\nu_e$ LEE" + ": {0:#.2g}".format(sum(weights[-1])))
+        if self.signal == "nue":
+            # LEE contribution
+            plot_data.append(temp_view.query("leeweight>0.001").eval(field))
+            weights.append(
+                temp_view.query("leeweight>0.001").eval("leeweight*plot_weight")
+            )
+            labels.append(r"$\nu_e$ LEE" + ": {0:#.2g}".format(sum(weights[-1])))
 
-        # DRT contribution
-        plot_self.data.append(self.data["dirt"]["daughters"].query(query).eval(field))
-        weights.append(
-            self.data["dirt"]["daughters"].query(query)["weightSpline"]
-            * self.data["dirt"]["scaling"]
-        )
-        labels.append("Out of Cryo" + ": {0:#.1f}".format(sum(weights[-1])))
         # Off Contribution
-        plot_self.data.append(self.data["off"]["daughters"].query(query).eval(field))
-        weights.append(len(plot_self.data[-1]) * [self.data["off"]["scaling"]])
+        temp_view = self.off_daughters.query(query)
+        plot_data.append(temp_view.eval(field))
+        weights.append(temp_view["plot_weight"])
         labels.append("BNB Off" + ": {0:#.1f}".format(sum(weights[-1])))
         # On Contribution
-        plot_self.data.append(self.data["on"]["daughters"].query(query).eval(field))
-        weights.append([1.0] * len(plot_self.data[-1]))
+        temp_view = self.on_daughters.query(query)
+        plot_data.append(temp_view.eval(field))
+        weights.append(temp_view["plot_weight"])
         labels.append("BNB On" + ": {0:0.0f}".format(sum(weights[-1])))
 
-        mc_weights = (
-            self.data["nu"]["daughters"].query(query)["weightSpline"]
-            * self.data["nu"]["scaling"]
-        )
-        ratio = sum(weights[-1]) / (
-            sum(weights[-2]) + sum(weights[-3]) + sum(mc_weights)
-        )
+        ratio1 = (sum(weights[-1]) - sum(weights[-2])) / sum(mc_weights)
+        ratio1_err = np.sqrt(sum(mc_weights) + sum(weights[-2])) / sum(mc_weights)
+        ratio2 = sum(weights[-1]) / (sum(mc_weights) + sum(weights[-2]))
+        ratio = [ratio1, ratio2, ratio1_err]
 
-        flattened_MC = np.concatenate(plot_self.data[:-1]).ravel()
+        # KS-test
+        flattened_MC = np.concatenate(plot_data[:-1]).ravel()
         flattened_weights = np.concatenate(weights[:-1]).ravel()
-        ks_test_d, ks_test_p = ks_w2(
-            flattened_MC, plot_self.data[-1], flattened_weights, np.array(weights[-1])
+        ks_test_d, ks_test_p = kstest_weighted(
+            flattened_MC, plot_data[-1], flattened_weights, weights[-1]
         )
 
-        # Start binning
+        # Start binning   hist_bin_uncertainty(data, weights, x_min, x_max, bin_edges)
         edges, edges_mid, bins, max_val = histHelper(
-            N_bins, x_min, x_max, plot_self.data, weights=weights
+            N_bins, x_min, x_max, plot_data, weights=weights
         )
-        err_on = hist_bin_uncertainty(
-            list(plot_self.data[-1]), list(weights[-1]), edges
-        )
-        err_off = hist_bin_uncertainty(
-            list(plot_self.data[-2]), list(weights[-2]), edges
-        )
-        err_drt = hist_bin_uncertainty(
-            list(plot_self.data[-3]), list(weights[-3]), edges
-        )
-        err_mc = hist_bin_uncertainty(
-            list(self.data["nu"]["daughters"].query(query).eval(field)),
-            list(
-                self.data["nu"]["daughters"].query(query)["weightSpline"]
-                * self.data["nu"]["scaling"]
-            ),
-            edges,
-        )
-        err_comined = np.sqrt(err_off ** 2 + err_drt ** 2 + err_mc ** 2)
-
+        err_on = hist_bin_uncertainty(plot_data[-1], weights[-1], x_min, x_max, edges)
+        err_off = hist_bin_uncertainty(plot_data[-2], weights[-2], x_min, x_max, edges)
+        err_mc = hist_bin_uncertainty(mc_data, mc_weights, x_min, x_max, edges)
+        err_comined = np.sqrt(err_off ** 2 + err_mc ** 2)
         widths = edges_mid - edges[:-1]
 
         # On
@@ -340,9 +258,8 @@ class Plotter:
                 color=col_i,
             )
             bottom += bin_i
-        # DRT
-        print("DRT: {0:#.2g}".format(sum(bins[-3])))
-        if sum(bins[-3]) > 0.2:
+        if self.signal == "nue":
+            # LEE
             ax[0].bar(
                 edges_mid,
                 bins[-3],
@@ -350,20 +267,9 @@ class Plotter:
                 label=labels[-3],
                 width=2 * widths,
                 bottom=bottom,
-                color="C1",
+                color=self.dicts.category_colors[111],
             )
             bottom += bins[-3]
-        # LEE
-        ax[0].bar(
-            edges_mid,
-            bins[-4],
-            lw=2,
-            label=labels[-4],
-            width=2 * widths,
-            bottom=bottom,
-            color=plot_dicts.category_colors[111],
-        )
-        bottom += bins[-4]
         val = bottom
         for m, v, e, w in zip(edges_mid, val, err_comined, widths):
             ax[0].add_patch(
@@ -392,8 +298,10 @@ class Plotter:
 
         ax[0].set_ylabel("Events per bin")
         ax[0].set_title(title_str, loc="right")
-        ax[0].set_title("self.data/MC ratio: {0:#.2f}".format(ratio), loc="left")
-        ax[0].set_ylim(0, y_max_scaler * max_val[-1])
+        ax[0].set_title(
+            "(On-Off)/MC: {0:.2f} $\pm$ {1:.2f}".format(ratio1, ratio1_err), loc="left"
+        )
+        ax[0].set_ylim(0, y_max_scaler * max(max_val[-1], max(val)))
         ax[0].set_xlim(x_min, x_max)
 
         # Ratio plots
@@ -407,7 +315,6 @@ class Plotter:
             alpha=1.0,
             color="k",
             fmt=".",
-            label="self.data error",
         )
         ax[1].set_ylabel(r"$\frac{Beam\ ON}{Beam\ OFF + MC}$")
         ax[1].set_xlabel(x_label)
@@ -415,44 +322,8 @@ class Plotter:
         if legend:
             ax[0].legend(bbox_to_anchor=(1.02, 0.5), loc="center left")
 
-        purity = get_purity(self.data, query, [1, 10, 11])
-        return ratio, purity, ks_test_p
-
-    def ks_w2(data1, data2, wei1, wei2):
-        """
-        2-sample KS test unbinned probability.
-        Takes into account the weight of the events.
-        stackoverflow.com/questions/40044375/
-        how-to-calculate-the-kolmogorov-smirnov-statistic-between-two-weighted-samples/40059727
-        
-        Arguments:
-            data1 {1d tuple} -- array with the data of a variable
-            wei1 {1d tuple} -- weights, same shape as data
-            data2 {1d tuple} -- array with the data of a variable
-            wei2 {1d tuple} -- weights, same shape as data
-
-        Outputs:
-            d -- KS-text max separation
-            prob -- KS-test p-value
-        """
-        ix1 = np.argsort(data1)
-        ix2 = np.argsort(data2)
-        data1 = data1[ix1]
-        data2 = data2[ix2]
-        wei1 = wei1[ix1]
-        wei2 = wei2[ix2]
-        data = np.concatenate([data1, data2])
-        cwei1 = np.hstack([0, np.cumsum(wei1) / sum(wei1)])
-        cwei2 = np.hstack([0, np.cumsum(wei2) / sum(wei2)])
-        cdf1we = cwei1[[np.searchsorted(data1, data, side="right")]]
-        cdf2we = cwei2[[np.searchsorted(data2, data, side="right")]]
-        d = np.max(np.abs(cdf1we - cdf2we))
-        # Note: d absolute not signed distance
-        n1 = sum(wei1)
-        n2 = sum(wei2)
-        en = np.sqrt(n1 * n2 / float(n1 + n2))
-        prob = scipy.stats.kstwobign.sf((en + 0.12 + 0.11 / en) * d)
-        return d, prob
+        purity = self.get_purity(query, self.cats)
+        return ratio, purity, ks_test_p, dict(zip(labels, bins))
 
 
 def efficiency(
@@ -541,3 +412,112 @@ def efficiency_post(
     unc_low = np.append(unc_low, unc_low[-1])
     unc_up = np.append(unc_up, unc_up[-1])
     return eff, unc_low, unc_up, edges
+
+
+def hist_bin_uncertainty(data, weights, x_min, x_max, bin_edges):
+    """
+        Calculate the error on the bins in the histogram including the weights.
+
+        Arguments:
+            edges {1d tuple} -- The bin edges
+            data {1d tuple} -- array with the data of a variable
+            weigths {1d tuple} -- weights, same shape as data
+            
+        Outputs:
+            bin_uncertainties {1d tuple} -- Uncertainty on each bin
+        """
+    # Bound the data and weights to be within the bin edges
+    mask_in_range = (data > x_min) & (data < x_max)
+    in_range_data = data[mask_in_range]
+    in_range_weights = weights[mask_in_range]
+
+    # Bin the weights with the same binning as the data
+    bin_index = np.digitize(in_range_data, bin_edges)
+    # N.B.: range(1, bin_edges.size) is used instead of set(bin_index) as if
+    # there is a gap in the data such that a bin is skipped no index would appear
+    # for it in the set
+    binned_weights = np.asarray(
+        [
+            in_range_weights[np.where(bin_index == idx)[0]]
+            for idx in range(1, len(bin_edges))
+        ]
+    )
+    bin_uncertainties = np.asarray(
+        [np.sqrt(np.sum(np.square(w))) for w in binned_weights]
+    )
+    return bin_uncertainties
+
+
+def kstest_weighted(data1, data2, wei1, wei2):
+    """
+    2-sample KS test unbinned probability.
+    Takes into account the weight of the events.
+    stackoverflow.com/questions/40044375/
+    how-to-calculate-the-kolmogorov-smirnov-statistic-between-two-weighted-samples/40059727
+    
+    Arguments:
+        data1 {1d tuple} -- array with the data of a variable
+        wei1 {1d tuple} -- weights, same shape as data
+        data2 {1d tuple} -- array with the data of a variable
+        wei2 {1d tuple} -- weights, same shape as data
+
+    Outputs:
+        d -- KS-text max separation
+        prob -- KS-test p-value
+    """
+    ix1 = np.argsort(data1)
+    ix2 = np.argsort(data2)
+    data1 = data1[ix1]
+    data2 = data2[ix2]
+    wei1 = wei1[ix1]
+    wei2 = wei2[ix2]
+    data = np.concatenate([data1, data2])
+    cwei1 = np.hstack([0, np.cumsum(wei1) / sum(wei1)])
+    cwei2 = np.hstack([0, np.cumsum(wei2) / sum(wei2)])
+    cdf1we = cwei1[[np.searchsorted(data1, data, side="right")]]
+    cdf2we = cwei2[[np.searchsorted(data2, data, side="right")]]
+    d = np.max(np.abs(cdf1we - cdf2we))
+    # Note: d absolute not signed distance
+    n1 = sum(wei1)
+    n2 = sum(wei2)
+    en = np.sqrt(n1 * n2 / float(n1 + n2))
+    prob = scipy.stats.kstwobign.sf((en + 0.12 + 0.11 / en) * d)
+    return d, prob
+
+
+def histHelper(n_bins, x_min, x_max, data, weights=0, where="mid", log=False):
+    """
+    Wrapper around the numpy histogram function.
+
+    Arguments:
+        n_bins {int} -- the number of bins
+        x_min {float} -- the minimum number along x
+        x_max {float} -- the maximum number along x
+        data {2d tuple} -- array or list of arrays
+        weigths {2d tuple} -- same shape as data or 0 if all weights are equal
+        where {string} -- if where='post': duplicate the last bin
+        log {bool} -- log==True: return x-axis log
+
+    Outputs:
+        edges {1d tuple} -- The bin edges
+        edges_mid {1d tuple} -- The middle of the bins
+        bins {2d tuple} -- The bin values, same depth as data
+        max_val {1d tuple}-- the maximum value, same depth as data
+    """
+    if log:
+        edges = np.logspace(np.log10(x_min), np.log10(x_max), n_bins + 1)
+    else:
+        edges = np.linspace(x_min, x_max, n_bins + 1)
+    edges_mid = [edges[i] + (edges[i + 1] - edges[i]) / 2 for i in range(n_bins)]
+    if weights == 0:
+        weights = [[1] * len(d) for d in data]
+
+    bins = [
+        np.histogram(data_i, bins=edges, weights=weights_i)[0]
+        for data_i, weights_i in zip(data, weights)
+    ]
+    max_val = [max(x) for x in bins]
+    if where == "post":
+        bins = [np.append(b, b[-1]) for b in bins]
+
+    return edges, edges_mid, bins, max_val

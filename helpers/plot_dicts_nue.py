@@ -13,6 +13,23 @@ category_labels = {
     7: r"Out of Cryo",  # DIRT sample
     0: r"No slice",
 }
+category_colors = {
+    4: "xkcd:salmon",
+    5: "xkcd:brick",
+    2: "xkcd:cyan",
+    21: "xkcd:cerulean",
+    3: "xkcd:cobalt",
+    31: "xkcd:sky blue",
+    1: "xkcd:green",
+    10: "xkcd:mint green",
+    11: "xkcd:lime green",
+    111: "xkcd:goldenrod",
+    6: "xkcd:black",
+    7: "xkcd:tomato",
+    0: "xkcd:black",
+}
+
+
 
 pdg_labels = {
     2212: r"$p$",
@@ -29,6 +46,19 @@ pdg_labels = {
     -321: r"$K$",
     0: "Cosmic",
 }
+pdg_colors = {
+    2212: "#a6cee3",
+    22: "#1f78b4",
+    13: "#b2df8a",
+    211: "#33a02c",
+    111: "#137e6d",
+    0: "#e31a1c",
+    11: "#ff7f00",
+    321: "#fdbf6f",
+    2112: "#cab2d6",
+}
+
+
 
 int_labels = {
     0: "QE",
@@ -46,8 +76,6 @@ int_labels = {
     12: "EM",
     13: "Weak Mix",
 }
-
-
 int_colors = {
     0: "bisque",
     1: "darkorange",
@@ -64,31 +92,4 @@ int_colors = {
     12: "magenta",
     13: "pink",
     111: "black",
-}
-
-category_colors = {
-    4: "xkcd:light red",
-    5: "xkcd:brick",
-    2: "xkcd:cyan",
-    21: "xkcd:cerulean",
-    3: "xkcd:cobalt",
-    31: "xkcd:sky blue",
-    1: "xkcd:green",
-    10: "xkcd:mint green",
-    11: "xkcd:lime green",
-    111: "xkcd:goldenrod",
-    6: "xkcd:grey",
-    0: "xkcd:black",
-}
-
-pdg_colors = {
-    2212: "#a6cee3",
-    22: "#1f78b4",
-    13: "#b2df8a",
-    211: "#33a02c",
-    111: "#137e6d",
-    0: "#e31a1c",
-    11: "#ff7f00",
-    321: "#fdbf6f",
-    2112: "#cab2d6",
 }
