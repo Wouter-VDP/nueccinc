@@ -299,7 +299,7 @@ class Plotter:
         ax[0].set_ylabel("Events per bin")
         ax[0].set_title(title_str, loc="right")
         ax[0].set_title(
-            "(On-Off)/MC: {0:.2f} $\pm$ {1:.2f}".format(ratio1, ratio1_err), loc="left"
+            "(On-Off)/MC:{0:.2f}$\pm${1:.2f}".format(ratio1, ratio1_err), loc="left"
         )
         ax[0].set_ylim(0, y_max_scaler * max(max_val[-1], max(val)))
         ax[0].set_xlim(x_min, x_max)
