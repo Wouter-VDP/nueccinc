@@ -55,7 +55,7 @@ pdg_colors = {
     0: "#e31a1c",
     11: "#ff7f00",
     321: "#fdbf6f",
-    2112: "#cab2d6",
+    2112: "xkcd:salmon",
 }
 
 

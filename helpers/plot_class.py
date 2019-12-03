@@ -28,6 +28,8 @@ class Plotter:
             self.cats = [1, 10, 11]
         elif signal == "numu":
             self.dicts = plot_dicts_numu
+            self.cats = [30,31,32]
+            
         else:
             print("Error, unknown signal string, choose nue or numu!")
         if not all([k in data.keys() for k in ["nu", "nue", "on", "off", "dirt"]]):
@@ -128,7 +130,7 @@ class Plotter:
         query="",
         title_str="",
         legend=True,
-        y_max_scaler=1.2,
+        y_max_scaler=1.1,
         kind="cat",
     ):
 
@@ -171,8 +173,8 @@ class Plotter:
             column_check = "backtracked_pdg"
 
         elif kind == "int":
-            kind_labs = plot_dicts.int_labels
-            kind_colors = plot_dicts.int_colors
+            kind_labs = self.dicts.int_labels
+            kind_colors = self.dicts.int_colors
             column_check = "cat_int"
         else:
             print("Unknown plotting type, please choose from int/pdg/cat")
@@ -187,7 +189,10 @@ class Plotter:
             if len(temp_view_cat.index) > 0 and cat != 6:
                 plot_data.append(temp_view_cat.eval(field))
                 weights.append(temp_view_cat["plot_weight"])
-                labels.append(kind_labs[cat] + ": {0:#.1f}".format(sum(weights[-1])))
+                
+                num_events = sum(weights[-1])
+                precision = int(max(np.floor(np.log10(num_events))+1,2))
+                labels.append(kind_labs[cat] + ": {:#.{prec}g}".format(num_events, prec=precision))
                 colors.append(kind_colors[cat])
                 print("MC category:", labels[-1], "\t#entries", len(plot_data[-1]))
 
@@ -203,7 +208,9 @@ class Plotter:
         temp_view = self.off_daughters.query(query)
         plot_data.append(temp_view.eval(field))
         weights.append(temp_view["plot_weight"])
-        labels.append("BNB Off" + ": {0:#.1f}".format(sum(weights[-1])))
+        num_events = sum(weights[-1])
+        precision = int(max(np.floor(np.log10(num_events))+1,2))
+        labels.append("BNB Off" + ": {:#.{prec}g}".format(num_events, prec=precision))
         # On Contribution
         temp_view = self.on_daughters.query(query)
         plot_data.append(temp_view.eval(field))
@@ -305,7 +312,9 @@ class Plotter:
         ax[0].set_xlim(x_min, x_max)
 
         # Ratio plots
-        ax[1].set_ylim(0.0, 2)
+        y_min_r = max(0, min((bins[-1]-err_on)/val)*0.9)  
+        y_max_r = min(2, max((bins[-1]+err_on)/val)*1.1)  
+        ax[1].set_ylim(y_min_r, y_max_r)
         ax[1].set_xlim(x_min, x_max)
         ax[1].errorbar(
             edges_mid,
