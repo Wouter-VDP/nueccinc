@@ -77,6 +77,7 @@ col_mc = [
     "true_nu_vtx_sce_y",
     "true_nu_vtx_sce_z",
     "nu_e",
+    "lep_e",
     "nu_pdg",
     'nelec',
     'npion',
@@ -131,6 +132,7 @@ cols_reco = col_event + cols_flatten
 table_cols = [
     "mc_pdg",
     "mc_E",
+    "lep_e",
     "ccnc",
     "theta",
     "true_nu_vtx_x",

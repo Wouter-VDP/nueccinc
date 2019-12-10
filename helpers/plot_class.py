@@ -85,6 +85,7 @@ class Plotter:
             * (nue_nuecctpc == 1)
         )
         data["dirt"]["daughters"]["category"] = 7
+        data["dirt"]["daughters"]["cat_int"] = 7
         data["dirt"]["daughters"]["plot_weight"] = (
             data["dirt"]["daughters"]["weightSpline"] * data["dirt"]["scaling"]
         )
@@ -118,7 +119,23 @@ class Plotter:
             )
 
         return purity_nom / purity_denom
+    
+    def get_ratio_and_purity(
+        self,
+        query=""
+    ):
+        mc_weights = sum(self.mc_daughters.query(query)["plot_weight"])
+        off_weights = sum(self.off_daughters.query(query)["plot_weight"])
+        on_weights = sum(self.on_daughters.query(query)["plot_weight"])
 
+        ratio1 = (on_weights - off_weights) / mc_weights
+        ratio1_err = np.sqrt(mc_weights + off_weights) / mc_weights
+        ratio2 = on_weights / (mc_weights + off_weights)
+        ratio = [ratio1, ratio2, ratio1_err]
+        
+        purity = self.get_purity(query, self.cats)
+        return ratio, purity, 
+    
     def plot_panel_data_mc(
         self,
         ax,
@@ -132,6 +149,7 @@ class Plotter:
         legend=True,
         y_max_scaler=1.1,
         kind="cat",
+        show_data = True
     ):
 
         """
@@ -156,11 +174,13 @@ class Plotter:
             ks_test_p -- p-value of the KS-test
             dict -- Output of the plot {labels: string, bins: 1d array}
         """
-
+        ratio, purity = self.get_ratio_and_purity(query)
+        
         plot_data = []
         weights = []
         labels = []
         colors = []
+        bin_err = []
 
         if kind == "cat":
             kind_labs = self.dicts.category_labels
@@ -203,6 +223,7 @@ class Plotter:
                 temp_view.query("leeweight>0.001").eval("leeweight*plot_weight")
             )
             labels.append(r"$\nu_e$ LEE" + ": {0:#.2g}".format(sum(weights[-1])))
+            colors.append(self.dicts.category_colors[111])
 
         # Off Contribution
         temp_view = self.off_daughters.query(query)
@@ -211,16 +232,13 @@ class Plotter:
         num_events = sum(weights[-1])
         precision = int(max(np.floor(np.log10(num_events))+1,2))
         labels.append("BNB Off" + ": {:#.{prec}g}".format(num_events, prec=precision))
+        colors.append("grey")
         # On Contribution
         temp_view = self.on_daughters.query(query)
         plot_data.append(temp_view.eval(field))
         weights.append(temp_view["plot_weight"])
         labels.append("BNB On" + ": {0:0.0f}".format(sum(weights[-1])))
-
-        ratio1 = (sum(weights[-1]) - sum(weights[-2])) / sum(mc_weights)
-        ratio1_err = np.sqrt(sum(mc_weights) + sum(weights[-2])) / sum(mc_weights)
-        ratio2 = sum(weights[-1]) / (sum(mc_weights) + sum(weights[-2]))
-        ratio = [ratio1, ratio2, ratio1_err]
+        colors.append('k')
 
         # KS-test
         flattened_MC = np.concatenate(plot_data[:-1]).ravel()
@@ -233,28 +251,33 @@ class Plotter:
         edges, edges_mid, bins, max_val = histHelper(
             N_bins, x_min, x_max, plot_data, weights=weights
         )
+        bin_dict = dict(zip(labels, zip(bins,colors)))
+        
+        for data_i, weight_i in zip(plot_data[:-2], weights[:-2]):
+            bin_err.append(hist_bin_uncertainty(data_i, weight_i, x_min, x_max, edges))
         err_on = hist_bin_uncertainty(plot_data[-1], weights[-1], x_min, x_max, edges)
         err_off = hist_bin_uncertainty(plot_data[-2], weights[-2], x_min, x_max, edges)
         err_mc = hist_bin_uncertainty(mc_data, mc_weights, x_min, x_max, edges)
         err_comined = np.sqrt(err_off ** 2 + err_mc ** 2)
         widths = edges_mid - edges[:-1]
-
-        # On
-        ax[0].errorbar(
-            edges_mid,
-            bins[-1],
-            xerr=widths,
-            yerr=err_on,
-            color="k",
-            fmt=".",
-            label=labels[-1],
-        )
+        
+        if show_data:
+            # On
+            ax[0].errorbar(
+                edges_mid,
+                bins[-1],
+                xerr=widths,
+                yerr=err_on,
+                color=colors[-1],
+                fmt=".",
+                label=labels[-1],
+            )
         # Off
         ax[0].bar(
-            edges_mid, bins[-2], lw=2, label=labels[-2], width=2 * widths, color="grey"
+            edges_mid, bins[-2], lw=2, label=labels[-2], width=2 * widths, color=colors[-2]
         )
-        bottom = bins[-2]
-        for bin_i, lab_i, col_i in zip(bins[:-2], labels[:-2], colors):
+        bottom = np.copy(bins[-2])
+        for bin_i, lab_i, col_i in zip(bins[:-2], labels[:-2], colors[:-2]):
             ax[0].bar(
                 edges_mid,
                 bin_i,
@@ -265,18 +288,6 @@ class Plotter:
                 color=col_i,
             )
             bottom += bin_i
-        if self.signal == "nue":
-            # LEE
-            ax[0].bar(
-                edges_mid,
-                bins[-3],
-                lw=2,
-                label=labels[-3],
-                width=2 * widths,
-                bottom=bottom,
-                color=self.dicts.category_colors[111],
-            )
-            bottom += bins[-3]
         val = bottom
         for m, v, e, w in zip(edges_mid, val, err_comined, widths):
             ax[0].add_patch(
@@ -306,7 +317,7 @@ class Plotter:
         ax[0].set_ylabel("Events per bin")
         ax[0].set_title(title_str, loc="right")
         ax[0].set_title(
-            "(On-Off)/MC:{0:.2f}$\pm${1:.2f}".format(ratio1, ratio1_err), loc="left"
+            "(On-Off)/MC:{0:.2f}$\pm${1:.2f}".format(ratio[0], ratio[2]), loc="left"
         )
         ax[0].set_ylim(0, y_max_scaler * max(max_val[-1], max(val)))
         ax[0].set_xlim(x_min, x_max)
@@ -316,23 +327,23 @@ class Plotter:
         y_max_r = min(2, max((bins[-1]+err_on)/val)*1.1)  
         ax[1].set_ylim(y_min_r, y_max_r)
         ax[1].set_xlim(x_min, x_max)
-        ax[1].errorbar(
-            edges_mid,
-            bins[-1] / val,
-            xerr=widths,
-            yerr=err_on / val,
-            alpha=1.0,
-            color="k",
-            fmt=".",
-        )
+        if show_data:               
+            ax[1].errorbar(
+                edges_mid,
+                bins[-1] / val,
+                xerr=widths,
+                yerr=err_on / val,
+                alpha=1.0,
+                color="k",
+                fmt=".",
+            )
         ax[1].set_ylabel(r"$\frac{Beam\ ON}{Beam\ OFF + MC}$")
         ax[1].set_xlabel(x_label)
 
         if legend:
             ax[0].legend(bbox_to_anchor=(1.02, 0.5), loc="center left")
 
-        purity = self.get_purity(query, self.cats)
-        return ratio, purity, ks_test_p, dict(zip(labels, bins))
+        return ratio, purity, ks_test_p, (bin_dict, edges_mid, bin_err)
 
 
 def efficiency(

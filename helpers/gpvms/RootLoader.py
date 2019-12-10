@@ -16,9 +16,7 @@ main_tree = "NeutrinoSelectionFilter"
 lower = np.array([-1.55, -115.53, 0.1])
 upper = np.array([254.8, 117.47, 1036.9])
 fid_vol = np.array([[5,6,20], [5,6,50]])
-contain_vol = np.array([[10,10,10], [10,10,10]])
 fid_box = np.array([lower+fid_vol[0], upper-fid_vol[1]]).T
-contain_box = np.array([lower+contain_vol[0], upper-contain_vol[1]]).T
 
 def is_in_box(x,y,z,box):
     bool_x = (box[0][0] < x) & (x < box[0][1])
@@ -27,8 +25,6 @@ def is_in_box(x,y,z,box):
     return bool_x & bool_y & bool_z
 def is_fid(x,y,z):
     return is_in_box(x,y,z,fid_box)
-def is_contain(x,y,z):
-    return is_in_box(x,y,z,contain_box)
 
 
 ### Load sample info
