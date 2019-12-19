@@ -15,7 +15,8 @@ main_tree = "NeutrinoSelectionFilter"
 ### Fiducial volume
 lower = np.array([-1.55, -115.53, 0.1])
 upper = np.array([254.8, 117.47, 1036.9])
-fid_vol = np.array([[5,6,20], [5,6,50]])
+#fid_vol = np.array([[5,6,20], [5,6,50]])
+fid_vol = np.array([[10,12,20], [10,12,50]])
 fid_box = np.array([lower+fid_vol[0], upper-fid_vol[1]]).T
 
 def is_in_box(x,y,z,box):
@@ -78,7 +79,7 @@ def load_sample_info(input_dir, run, exclude_samples):
                                                       pass_rate*100))
         duplicates = sum(sample_info[k]["daughters"].xs(0, level="daughter").groupby(by=["evt", "sub", "run",'reco_nu_vtx_z']).size()> 1)
         if duplicates>0:
-            print('Duplicated daughters in sample: {}'.format(duplicates))
+            print('Duplicated events in sample: {}'.format(duplicates))
         if k not in data_samples:
             mc_arrays, signal_mask_daughters, truth_categories_daughters = load_truth_event(file[main_tree], k)
             sample_info[k]['mc'] = mc_arrays
@@ -135,7 +136,7 @@ def calc_max_angle(tree):
   
 # Load, Add vars, Pickle!
 run=input("Which Run? ")
-dir_path = "/uboone/app/users/wvdp/RootTrees/1123/run{}/".format(run)
+dir_path = "/uboone/app/users/wvdp/RootTrees/1205/run{}/".format(run)
 exclude_samples = []
 output = load_sample_info(dir_path, run, exclude_samples)
 if input("Do you want to pickle the data? (y/n) ")=="y":

@@ -251,7 +251,6 @@ class Plotter:
         edges, edges_mid, bins, max_val = histHelper(
             N_bins, x_min, x_max, plot_data, weights=weights
         )
-        bin_dict = dict(zip(labels, zip(bins,colors)))
         
         for data_i, weight_i in zip(plot_data[:-2], weights[:-2]):
             bin_err.append(hist_bin_uncertainty(data_i, weight_i, x_min, x_max, edges))
@@ -260,6 +259,9 @@ class Plotter:
         err_mc = hist_bin_uncertainty(mc_data, mc_weights, x_min, x_max, edges)
         err_comined = np.sqrt(err_off ** 2 + err_mc ** 2)
         widths = edges_mid - edges[:-1]
+        
+        bin_err.extend([err_off, err_on])
+        bin_dict = dict(zip(labels, zip(bins,colors,bin_err)))
         
         if show_data:
             # On
@@ -343,7 +345,62 @@ class Plotter:
         if legend:
             ax[0].legend(bbox_to_anchor=(1.02, 0.5), loc="center left")
 
-        return ratio, purity, ks_test_p, (bin_dict, edges_mid, bin_err)
+        return ratio, purity, ks_test_p, (bin_dict, edges_mid)
+    
+    
+    def plot_variable(
+        self,
+        ax,
+        field,
+        x_label,
+        N_bins,
+        x_min,
+        x_max,
+        query="",
+        title_str="",
+        kind="cat",
+        y_max_scaler=1.1,
+    ):
+        ratio, purity, ks_p, (bin_dict, edges_mid) = self.plot_panel_data_mc(
+            ax.T[1],
+            field,
+            x_label,
+            N_bins,
+            x_min,
+            x_max,
+            query,
+            title_str,
+            kind,
+            y_max_scaler,
+        )
+        ax[0][1].text(
+            ax[0][1].get_xlim()[1] * 0.8,
+            ax[0][1].get_ylim()[1] * 0.8,
+            r"$\nu_e$"
+            + " CC purity: {0:<3.1f}%\nKS p-value: {1:<5.2f}".format(purity * 100, ks_p),
+            horizontalalignment="right",
+            fontsize=12,
+        )
+        ax[1][0].remove()
+
+        exclude = list(bin_dict.keys())[-4:]
+        for k, (v, c, e) in bin_dict.items():
+            if k not in exclude:
+                sum_cat = float(k.split(":")[-1])
+                v_norm = v / sum_cat
+                e_norm = e / sum_cat
+                print(k)
+                ax[0][0].fill_between(
+                    edges_mid,
+                    v_norm - e_norm,
+                    v_norm + e_norm,
+                    alpha=0.3,
+                    step="mid",
+                    color=c,
+                )
+                ax[0][0].set_xlabel(x_label)
+                ax[0][0].set_ylabel("Area Normalised")
+                ax[0][0].set_title("Background/Signal shape", loc="left")
 
 
 def efficiency(

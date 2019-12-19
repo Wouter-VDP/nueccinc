@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 run=input("Which Run? ")
-dir_path = "/uboone/app/users/wvdp/RootTrees/1123/run{}/".format(run)
+dir_path = "/uboone/app/users/wvdp/RootTrees/1205/run{}/".format(run)
 root_dir = 'nuselection'
 tree_name = "SubRun"
 

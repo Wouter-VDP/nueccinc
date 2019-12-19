@@ -39,16 +39,25 @@ col_trk = [
     "trk_sce_start_x_v",
     "trk_sce_start_y_v",
     "trk_sce_start_z_v",
+    "trk_start_x_v",
+    "trk_start_y_v",
+    "trk_start_z_v"
 ]
 col_shr = [
     #"shr_dist_v",
     "shr_energy_y_v",
-    "shr_openangle_v",
+    "shr_energy_u_v",
+    "shr_energy_v_v",
     "shr_tkfit_start_x_v",
     "shr_tkfit_start_y_v",
     "shr_tkfit_start_z_v",
+    "shr_start_x",
+    "shr_start_y",
+    "shr_start_z",
     "shr_tkfit_theta_v",
     "shr_tkfit_phi_v",
+    "shr_phi_v",
+    "shr_theta_v",
     "shr_tkfit_dedx_u_v",
     "shr_tkfit_dedx_v_v",
     "shr_tkfit_dedx_y_v",
@@ -62,13 +71,21 @@ col_shr = [
     'shr_moliere_avg_v',
     'shr_moliere_rms_v'
 ]
+
 col_backtracked = [
     "backtracked_pdg",
     "backtracked_e",
     "backtracked_completeness",
     "backtracked_purity",
     "backtracked_overlay_purity",
+    "backtracked_px",
+    "backtracked_py",
+    "backtracked_pz",
+    "backtracked_sce_start_x",
+    "backtracked_sce_start_y",
+    "backtracked_sce_start_z"
 ]
+
 col_mc = [
     "true_nu_vtx_x",
     "true_nu_vtx_y",
@@ -120,7 +137,17 @@ col_event = [
     "contained_fraction",
     "slpdg",
     "SliceCaloEnergy2",
-    'NeutrinoEnergy2'
+    'NeutrinoEnergy2',
+    "secondshower_Y_nhit",
+    "secondshower_Y_vtxdist",
+    "secondshower_Y_dot",
+    "secondshower_Y_dir",
+    "shrclusdir2",
+    "CosmicIPAll3D",
+    "CosmicDirAll3D",
+    "ismerged",
+    "merge_bestdot",
+    "merge_bestdist" 
 ]
 
 cols_run3 = ["_closestNuCosmicDist"]
