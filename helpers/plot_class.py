@@ -21,7 +21,7 @@ class Plotter:
     gr = 1.618
 
     # Fields for initialisation
-    def __init__(self, data, signal="nue", genie_version="mcc9"):
+    def __init__(self, data, signal="nue", genie_version="mcc9.1"):
         self.signal = signal
         if signal == "nue":
             self.dicts = plot_dicts_nue
@@ -34,7 +34,8 @@ class Plotter:
             print("Error, unknown signal string, choose nue or numu!")
         if not all([k in data.keys() for k in ["nu", "nue", "on", "off", "dirt"]]):
             print("Error, missing samples in the data set!")
-
+            
+        weights_field = "weightSplineTimesTune"
         # Use the Genie v2 model by upweighting.
         if genie_version == "mcc8":
             numu_spline = uproot.open("./helpers/numu_v13_v12_Ratio.root")
@@ -52,6 +53,12 @@ class Plotter:
             print(
                 "Using the energy/pdg dependent spline weights as in MCC8 Genie V2 tune1"
             )
+            weights_field = "weightSpline"
+        if genie_version == "mcc9.0":
+            weights_field = "weightSpline" 
+            print("Using the spline weights as in MCC9.0 Genie V3")
+        if genie_version == "mcc9.1":
+            print("Using the spline weights as in MCC9.1 Genie V3 tune 1")
 
         # Use the nue CC inc sample for plotting
         nue_tpc = helpfunction.is_tpc(
@@ -75,19 +82,19 @@ class Plotter:
         nu_nuecctpc = data["nu"]["daughters"].eval("ccnc==0 & abs(nu_pdg)==12") & nu_tpc
 
         data["nu"]["daughters"]["plot_weight"] = (
-            data["nu"]["daughters"]["weightSpline"]
+            data["nu"]["daughters"][weights_field]
             * data["nu"]["scaling"]
             * (nu_nuecctpc == 0)
         )
         data["nue"]["daughters"]["plot_weight"] = (
-            data["nue"]["daughters"]["weightSpline"]
+            data["nue"]["daughters"][weights_field]
             * data["nue"]["scaling"]
             * (nue_nuecctpc == 1)
         )
         data["dirt"]["daughters"]["category"] = 7
         data["dirt"]["daughters"]["cat_int"] = 7
         data["dirt"]["daughters"]["plot_weight"] = (
-            data["dirt"]["daughters"]["weightSpline"] * data["dirt"]["scaling"]
+            data["dirt"]["daughters"][weights_field] * data["dirt"]["scaling"]
         )
         data["on"]["daughters"]["plot_weight"] = 1
         data["off"]["daughters"]["plot_weight"] = data["off"]["scaling"]

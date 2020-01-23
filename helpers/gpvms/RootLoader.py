@@ -16,7 +16,7 @@ main_tree = "NeutrinoSelectionFilter"
 lower = np.array([-1.55, -115.53, 0.1])
 upper = np.array([254.8, 117.47, 1036.9])
 #fid_vol = np.array([[5,6,20], [5,6,50]])
-fid_vol = np.array([[10,12,20], [10,12,50]])
+fid_vol = np.array([[10,10,20], [10,10,50]])
 fid_box = np.array([lower+fid_vol[0], upper-fid_vol[1]]).T
 
 def is_in_box(x,y,z,box):
@@ -32,7 +32,9 @@ def is_fid(x,y,z):
 def load_sample_info(input_dir, run, exclude_samples):
     start = time.time()
     samples = glob.glob(input_dir+"/*root")
-    sample_names = ["_".join(k.split("_")[2:-1]) for k in samples]
+    print(samples)
+    temp_names = [k.split('/')[-1].split('.')[0] for k in samples]
+    sample_names = ["_".join(k.split("_")[1:]) for k in temp_names]
     print('\nSamples found in directory: ',sample_names)
     print('\nSample Summary: [name, POT, Scaling, Events, SliceID passing rate]')
     sample_dict = dict(zip(sample_names, samples))
@@ -93,7 +95,7 @@ def load_sample_info(input_dir, run, exclude_samples):
 
 def load_truth_event(tree, name):
     mc_arrays = tree.arrays(col_load.table_cols, namedecode="utf-8")
-    mc_arrays["leeweight"] *= mc_arrays["weightSpline"]
+    mc_arrays["leeweight"] *= mc_arrays["weightSplineTimesTune"]
 
     has_fiducial_vtx = is_fid(
         mc_arrays["true_nu_vtx_x"],
@@ -136,7 +138,7 @@ def calc_max_angle(tree):
   
 # Load, Add vars, Pickle!
 run=input("Which Run? ")
-dir_path = "/uboone/app/users/wvdp/RootTrees/1205/run{}/".format(run)
+dir_path = "/uboone/data/users/wvdp/searchingfornues/v08_00_00_33/david_0109/run{}/".format(run)
 exclude_samples = []
 output = load_sample_info(dir_path, run, exclude_samples)
 if input("Do you want to pickle the data? (y/n) ")=="y":

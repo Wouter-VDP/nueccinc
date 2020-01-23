@@ -4,12 +4,12 @@ import numpy as np
 import pandas as pd
 
 run=input("Which Run? ")
-dir_path = "/uboone/app/users/wvdp/RootTrees/1205/run{}/".format(run)
+dir_path = "/uboone/data/users/wvdp/searchingfornues/v08_00_00_33/david_0109/run{}/".format(run)
 root_dir = 'nuselection'
 tree_name = "SubRun"
 
-fn_on = "run{}_beam_on_cc0pinp.root".format(run)
-fn_off = "run{}_beam_off_cc0pinp.root".format(run)
+fn_on = "run{}_beam_on.root".format(run)
+fn_off = "run{}_beam_off.root".format(run)
 files = {"On": fn_on, "Off": fn_off}
 
 for name,file in files.items():

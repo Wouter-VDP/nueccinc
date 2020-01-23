@@ -3,7 +3,7 @@
 from subprocess import check_output
 
 run=input("Which Run? ")
-dir_path = "/uboone/app/users/wvdp/RootTrees/1205/run{}/".format(run)
+dir_path = "/uboone/data/users/wvdp/searchingfornues/v08_00_00_33/david_0109/run{}/".format(run)
 pot_dict = {}
 
 print "Beam On Sample:"
