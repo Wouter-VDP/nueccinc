@@ -352,7 +352,7 @@ class Plotter:
         if legend:
             ax[0].legend(bbox_to_anchor=(1.02, 0.5), loc="center left")
 
-        return ratio, purity, ks_test_p, (bin_dict, edges_mid)
+        return ratio, purity, ks_test_p, (bin_dict, edges_mid, edges)
     
     
     def plot_variable(
@@ -368,7 +368,7 @@ class Plotter:
         kind="cat",
         y_max_scaler=1.1,
     ):
-        ratio, purity, ks_p, (bin_dict, edges_mid) = self.plot_panel_data_mc(
+        ratio, purity, ks_p, (bin_dict, edges_mid, edges) = self.plot_panel_data_mc(
             ax.T[1],
             field,
             x_label,
