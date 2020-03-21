@@ -7,11 +7,17 @@ mass_p = 0.93827
 min_p_energy = mass_p + 0.04
 min_e_energy = 0.020
 data_samples = ['on', 'off']
+gr = 1.618
+
+phi_ticks = [-np.pi, -np.pi / 2, 0, np.pi / 2, np.pi]
+phi_labs = [r"$-\pi$", r"$-\pi/2$", r"$0$", r"$\pi/2$", r"$\pi$"]
+theta_ticks = [0, np.pi / 4, np.pi / 2, 3 * np.pi / 4, np.pi]
+theta_labs = [r"$0$", r"$\pi/4$", r"$\pi$/2", r"$3\pi$/4", r"$\pi$"]
 
 ### Fiducial volume
 lower = np.array([-1.55, -115.53, 0.1])
 upper = np.array([254.8, 117.47, 1036.9])
-fid_vol = np.array([[10,10,10], [10,10,50]])
+fid_vol = np.array([[10,10,20], [10,10,50]])
 contain_vol = np.array([[5,6,10], [5,6,10]])
 fid_box = np.array([lower+fid_vol[0], upper-fid_vol[1]]).T
 contain_box = np.array([lower+contain_vol[0], upper-contain_vol[1]]).T

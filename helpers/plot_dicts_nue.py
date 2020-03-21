@@ -93,3 +93,25 @@ int_colors = {
     13: "pink",
     111: "black",
 }
+
+sys_col_labels = {
+    0: (r"$\nu_e$ CC", "xkcd:green"),
+    2: (r"$\nu_e$ LEE", "xkcd:goldenrod"),
+    1: (r"$\nu$ bkgds","xkcd:sky blue"),
+}
+
+syst_groups_cat = {
+    1: 0,
+    10: 0,
+    11: 0,
+    2: 1,
+    21: 1,
+    3: 1,
+    31: 1,
+    4: 1,
+    5: 1,
+    6: 1,
+    7: 1,
+    0: 1,
+    111:2,
+}

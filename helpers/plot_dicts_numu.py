@@ -92,3 +92,22 @@ int_colors = {
     7: "xkcd:tomato",
     0: "xkcd:black"
 }
+
+sys_col_labels = {
+    0: (r"$\nu_\mu$ CC", "xkcd:green"),
+    1: (r"$\nu$ bkgds","xkcd:sky blue"),
+}
+
+syst_groups_cat = {
+    30: 0,
+    31: 0,
+    32: 0,
+    33: 1,
+    34: 1,
+    10: 1,
+    4: 1,
+    5: 1,
+    6: 1,
+    7: 1,
+    0: 1,
+}

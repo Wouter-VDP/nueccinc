@@ -156,7 +156,10 @@ class Plotter:
         legend=True,
         y_max_scaler=1.1,
         kind="cat",
-        show_data = True
+        show_data = True,
+        syst_fractions = [],
+        y_label="Events per bin",
+        show_lee = True
     ):
 
         """
@@ -203,6 +206,12 @@ class Plotter:
             kind_labs = self.dicts.int_labels
             kind_colors = self.dicts.int_colors
             column_check = "cat_int"
+        elif kind == "syst":
+            kind_labs = self.dicts.category_labels
+            kind_colors = self.dicts.category_colors
+            column_check = "category"
+            syst_grouper = []
+            assert(len(syst_fractions)==N_bins)
         else:
             print("Unknown plotting type, please choose from int/pdg/cat")
 
@@ -222,8 +231,10 @@ class Plotter:
                 labels.append(kind_labs[cat] + ": {:#.{prec}g}".format(num_events, prec=precision))
                 colors.append(kind_colors[cat])
                 print("MC category:", labels[-1], "\t#entries", len(plot_data[-1]))
+                if kind=="syst":
+                    syst_grouper.append(self.dicts.syst_groups_cat[cat])
 
-        if self.signal == "nue":
+        if (self.signal == "nue") & show_lee:
             # LEE contribution
             plot_data.append(temp_view.query("leeweight>0.001").eval(field))
             weights.append(
@@ -231,6 +242,8 @@ class Plotter:
             )
             labels.append(r"$\nu_e$ LEE" + ": {0:#.2g}".format(sum(weights[-1])))
             colors.append(self.dicts.category_colors[111])
+            if kind=="syst":
+                syst_grouper.append(self.dicts.syst_groups_cat[111])
 
         # Off Contribution
         temp_view = self.off_daughters.query(query)
@@ -286,18 +299,33 @@ class Plotter:
             edges_mid, bins[-2], lw=2, label=labels[-2], width=2 * widths, color=colors[-2]
         )
         bottom = np.copy(bins[-2])
-        for bin_i, lab_i, col_i in zip(bins[:-2], labels[:-2], colors[:-2]):
-            ax[0].bar(
-                edges_mid,
-                bin_i,
-                lw=2,
-                label=lab_i,
-                width=2 * widths,
-                bottom=bottom,
-                color=col_i,
-            )
-            bottom += bin_i
-        val = bottom
+        if kind == 'syst':
+            for k, (lab_i, col_i) in self.dicts.sys_col_labels.items():
+                bin_i = np.sum(np.array(bins[:-2])[np.array(syst_grouper)==k], axis=0)
+                ax[0].bar(
+                        edges_mid,
+                        bin_i,
+                        lw=2,
+                        label=lab_i+": {}".format(int(round(10*sum(bin_i)))/10),
+                        width=2 * widths,
+                        bottom=bottom,
+                        color=col_i,
+                    )
+                bottom += bin_i
+            err_comined = syst_fractions*bottom
+        else:
+            for bin_i, lab_i, col_i in zip(bins[:-2], labels[:-2], colors[:-2]):
+                ax[0].bar(
+                    edges_mid,
+                    bin_i,
+                    lw=2,
+                    label=lab_i,
+                    width=2 * widths,
+                    bottom=bottom,
+                    color=col_i,
+                )
+                bottom += bin_i
+        val = bottom    
         for m, v, e, w in zip(edges_mid, val, err_comined, widths):
             ax[0].add_patch(
                 patches.Rectangle(
@@ -323,7 +351,7 @@ class Plotter:
                 )
             )
 
-        ax[0].set_ylabel("Events per bin")
+        ax[0].set_ylabel(y_label)
         ax[0].set_title(title_str, loc="right")
         ax[0].set_title(
             "(On-Off)/MC:{0:.2f}$\pm${1:.2f}".format(ratio[0], ratio[2]), loc="left"
